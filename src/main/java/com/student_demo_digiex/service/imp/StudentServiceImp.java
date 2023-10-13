@@ -1,6 +1,7 @@
 package com.student_demo_digiex.service.imp;
 
 import com.student_demo_digiex.common.exception.custom.APIRequestException;
+import com.student_demo_digiex.common.utils.Constant;
 import com.student_demo_digiex.dto.ClassDTO;
 import com.student_demo_digiex.dto.StudentDTO;
 import com.student_demo_digiex.dto.SubjectDTO;
@@ -44,10 +45,22 @@ public class StudentServiceImp implements StudentService {
     ClassService classService;
 
     @Override
+    public List<StudentDTO> get3StudentSortByScoreAndDob(String rank) {
+        return switch (rank) {
+            case "EXCELLENT" -> findTop3ByScoreBetweenOrderByScoreDescDobAsc(10, Constant.EXCELLENT);
+            case "GOOD" -> findTop3ByScoreBetweenOrderByScoreDescDobAsc(Constant.EXCELLENT, Constant.GOOD);
+            case "AVERAGE" -> findTop3ByScoreBetweenOrderByScoreDescDobAsc(Constant.GOOD, Constant.AVERAGE);
+            case "WEAK" -> findTop3ByScoreBetweenOrderByScoreDescDobAsc(Constant.AVERAGE, Constant.WEAK);
+            case "POOR" -> findTop3ByScoreBetweenOrderByScoreDescDobAsc(Constant.WEAK, Constant.POOR);
+            default -> throw new APIRequestException("Rank invalid");
+        };
+    }
+
+    @Override
     public List<StudentDTO> getAllStudentByClassIdDefaultSortHighScore(String classId) {
         classService.checkClassIfExists(classId);
 
-        List<StudentDTO> studentDTOList = getAllStudentByClassId(classId);
+        List<StudentDTO> studentDTOList = getAllStudentWithAverageScore(studentRepository.findAllByClassEntityId(classId));
         return studentDTOList
                 .stream()
                 .sorted((o2, o1) -> compare(o1.getAverageScore(), o2.getAverageScore()))
@@ -79,16 +92,16 @@ public class StudentServiceImp implements StudentService {
         if (filterStudentRequest.getFilterStartDate().isEmpty()) {
             filterStudentRequest.setFilterStartDate("1900-01-01");
         }
-        //Default endDate now()
-        Date currentDate = new Date();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd"); // Định dạng của chuỗi đầu ra
-        String dateStr = sdf.format(currentDate);
+
         if (filterStudentRequest.getFilterEndDate().isEmpty()) {
+            //Default endDate now()
+            Date currentDate = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd"); // Định dạng của chuỗi đầu ra
+            String dateStr = sdf.format(currentDate);
             filterStudentRequest.setFilterEndDate(dateStr);
         }
 
         pageable = configSort(pageable, currentPage, totalItem, filterStudentRequest);
-        System.out.println(filterStudentRequest);
 
         Page<StudentEntity> page;
         if (filterStudentRequest.getSearchTerm().isEmpty()) {
@@ -112,7 +125,6 @@ public class StudentServiceImp implements StudentService {
                     pageable);
         }
 
-        System.out.println(page.getContent().size());
         List<StudentDTO> studentDTOS = page.getContent()
                 .stream()
                 .map(StudentMapper::entityToDTO).toList();
@@ -228,9 +240,9 @@ public class StudentServiceImp implements StudentService {
         }
     }
 
-    public List<StudentDTO> getAllStudentByClassId(String classId) {
+    public List<StudentDTO> getAllStudentWithAverageScore(List<StudentEntity> studentEntityList) {
         List<StudentDTO> studentDTOList = new ArrayList<>();
-        studentRepository.findAllByClassEntityId(classId).forEach(studentEntity -> {
+        studentEntityList.forEach(studentEntity -> {
             StudentDTO studentDTO = entityToDTO(studentEntity);
             double averageScore = 0;
             List<SubjectDTO> subjectDTOList = new ArrayList<>();
@@ -278,4 +290,44 @@ public class StudentServiceImp implements StudentService {
         }
         return pageable;
     }
+
+    public List<StudentDTO> findTop3ByScoreBetweenOrderByScoreDescDobAsc(double maxScore, double minScore){
+        List<StudentDTO> studentDTOList = getAllStudentWithAverageScore
+                (studentRepository.findAll());
+
+        //Filter get only 3 student with appropriate score
+        if(maxScore == 10){
+            studentDTOList = studentDTOList.stream()
+                    .filter(studen -> studen.getAverageScore() >= 8)
+                    .sorted((o1, o2) -> compare(o2.getAverageScore(), o1.getAverageScore()))
+                    .sorted(Comparator.comparingDouble(StudentDTO::getAverageScore))
+                    .limit(3)
+                    .collect(Collectors.toList());
+        } else if (minScore == 0) {
+            System.out.println("vào");
+            studentDTOList = studentDTOList.stream()
+                    .filter(studen -> studen.getAverageScore() < 3)
+                    .sorted(Comparator.comparingDouble(StudentDTO::getAverageScore))
+                    .limit(3)
+                    .collect(Collectors.toList());
+        }else{
+            studentDTOList = studentDTOList.stream()
+                    .filter(student ->
+                            student.getAverageScore() < maxScore
+                                    && student.getAverageScore() >= minScore)
+                    .sorted(Comparator.comparingDouble(StudentDTO::getAverageScore))
+                    .limit(3)
+                    .collect(Collectors.toList());
+        }
+
+        //If those average scores are equal, then sort by dob asc
+        studentDTOList.sort((s1, s2) -> {
+            int compareValue = Double.compare(s2.getAverageScore(), s1.getAverageScore());
+            if(compareValue == 0){
+                compareValue = s1.getDob().compareTo(s2.getDob());
+            }
+            return compareValue;
+        });
+        return studentDTOList;
+    };
 }

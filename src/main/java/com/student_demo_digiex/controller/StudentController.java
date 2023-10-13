@@ -5,6 +5,7 @@ import com.student_demo_digiex.dto.StudentDTO;
 import com.student_demo_digiex.model.request.FilterStudentRequest;
 import com.student_demo_digiex.model.response.DataResponse;
 import com.student_demo_digiex.model.response.PagingStudentResponse;
+import com.student_demo_digiex.repository.StudentRepository;
 import com.student_demo_digiex.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,11 +21,13 @@ public class StudentController {
 
     @Autowired
     StudentService studentService;
+    @Autowired
+    StudentRepository studentRepository;
 
-    @GetMapping("rank/{status}")
-    public ResponseEntity<?> getStudentByRank(@PathVariable("status") String status){
+    @GetMapping("rank/{rank}")
+    public ResponseEntity<?> getStudentByRank(@PathVariable("rank") String rank){
         DataResponse dataResponse = new DataResponse();
-        dataResponse.setData(studentService.getStudentById(id));
+        dataResponse.setData(studentService.get3StudentSortByScoreAndDob(rank.toUpperCase()));
         dataResponse.setStatus(HttpStatus.OK.value());
         return new ResponseEntity<>(dataResponse, HttpStatus.OK);
     }

@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface StudentService {
 
+    List<StudentDTO> get3StudentSortByScoreAndDob(String rank);
     List<StudentDTO> getAllStudentByClassIdDefaultSortHighScore(String classId);
     StudentDTO getStudentById(String idStudent);
 
