@@ -6,6 +6,7 @@ public interface Constant {
     String DATE_FORMAT = "yyyy/MM/dd";
     String API_FORMAT_DATE = "yyyy/MM/dd HH:mm:ss";
 
+    double MAX = 10;
     double EXCELLENT = 8;
     double GOOD = 6.5;
     double AVERAGE = 5;

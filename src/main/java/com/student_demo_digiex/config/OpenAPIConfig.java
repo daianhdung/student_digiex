@@ -1,4 +1,4 @@
-package com.student_demo_digiex.common.config;
+package com.student_demo_digiex.config;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.models.OpenAPI;

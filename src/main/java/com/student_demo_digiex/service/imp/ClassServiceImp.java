@@ -1,13 +1,13 @@
 package com.student_demo_digiex.service.imp;
 
 import com.student_demo_digiex.common.exception.custom.APIRequestException;
+import com.student_demo_digiex.common.utils.UniqueID;
 import com.student_demo_digiex.dto.ClassDTO;
 import com.student_demo_digiex.dto.StudentDTO;
 import com.student_demo_digiex.dto.SubjectDTO;
 import com.student_demo_digiex.dto.mapper.ClassMapper;
 import com.student_demo_digiex.dto.mapper.SubjectMapper;
 import com.student_demo_digiex.entity.ClassEntity;
-import com.student_demo_digiex.entity.StudentEntity;
 import com.student_demo_digiex.model.request.FilterClassRequest;
 import com.student_demo_digiex.model.response.PagingClassResponse;
 import com.student_demo_digiex.repository.ClassRepository;
@@ -22,12 +22,10 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.student_demo_digiex.dto.mapper.ClassMapper.dtoToEntity;
-import static com.student_demo_digiex.dto.mapper.SubjectMapper.entityToDTO;
-import static com.student_demo_digiex.dto.mapper.StudentMapper.entityToDTO;
 import static com.student_demo_digiex.dto.mapper.ClassMapper.entityToDTO;
+import static com.student_demo_digiex.dto.mapper.StudentMapper.entityToDTO;
 
 @Service
 public class ClassServiceImp implements ClassService {
@@ -76,6 +74,7 @@ public class ClassServiceImp implements ClassService {
     @Override
     public boolean createClass(ClassDTO classDTO) {
         if(classRepository.getClassEntitiesByName(classDTO.getName()) == null){
+            classDTO.setId(UniqueID.getUUID());
             classRepository.save(dtoToEntity(classDTO));
             return true;
         }else{

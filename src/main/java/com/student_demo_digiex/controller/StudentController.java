@@ -1,6 +1,7 @@
 package com.student_demo_digiex.controller;
 
 
+import com.student_demo_digiex.common.utils.RestAPIStatus;
 import com.student_demo_digiex.dto.StudentDTO;
 import com.student_demo_digiex.model.request.FilterStudentRequest;
 import com.student_demo_digiex.model.response.DataResponse;
@@ -17,7 +18,7 @@ import javax.validation.Valid;
 @RestController
 @CrossOrigin
 @RequestMapping("/student")
-public class StudentController {
+public class StudentController extends BaseController{
 
     @Autowired
     StudentService studentService;
@@ -26,62 +27,47 @@ public class StudentController {
 
     @GetMapping("rank/{rank}")
     public ResponseEntity<?> getStudentByRank(@PathVariable("rank") String rank){
-        DataResponse dataResponse = new DataResponse();
-        dataResponse.setData(studentService.get3StudentSortByScoreAndDob(rank.toUpperCase()));
-        dataResponse.setStatus(HttpStatus.OK.value());
-        return new ResponseEntity<>(dataResponse, HttpStatus.OK);
+        return responseUtil.buildResponse(RestAPIStatus.OK, studentService.get3StudentSortByScoreAndDob(rank.toUpperCase())
+                , HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getStudentById(@PathVariable("id") String id){
-        DataResponse dataResponse = new DataResponse();
-        dataResponse.setData(studentService.getStudentById(id));
-        dataResponse.setStatus(HttpStatus.OK.value());
-        return new ResponseEntity<>(dataResponse, HttpStatus.OK);
+        return responseUtil.buildResponse(RestAPIStatus.OK, studentService.getStudentById(id)
+                , HttpStatus.OK);
     }
 
     @GetMapping("/class/{classId}")
     public ResponseEntity<?> getAllStudent(@PathVariable("classId") String classId){
-        DataResponse dataResponse = new DataResponse();
-        dataResponse.setData(studentService.getAllStudentByClassIdDefaultSortHighScore(classId));
-        dataResponse.setStatus(HttpStatus.OK.value());
-        return new ResponseEntity<>(dataResponse, HttpStatus.OK);
+        return responseUtil.buildResponse(RestAPIStatus.OK, studentService.getAllStudentByClassIdDefaultSortHighScore(classId)
+                , HttpStatus.OK);
     }
 
     @PostMapping
     public ResponseEntity<?> createStudent(@RequestBody @Valid StudentDTO studentDTO){
-        studentService.createStudent(studentDTO);
-        DataResponse dataResponse = new DataResponse();
-        dataResponse.setStatus(200);
-        dataResponse.setDesc("Create Student successfully");
-        return new ResponseEntity<>(dataResponse, HttpStatus.OK);
+        boolean isSuccess = studentService.createStudent(studentDTO);
+        return responseUtil.buildResponse(RestAPIStatus.OK, isSuccess
+                , "Create Student successfully", HttpStatus.OK);
     }
 
     @PostMapping("/filter")
     public ResponseEntity<?> getStudentByFilter(@RequestBody FilterStudentRequest filterStudentRequest) {
-        PagingStudentResponse pagingStudentResponse = studentService.pagingStudent(filterStudentRequest);
-        DataResponse dataResponse = new DataResponse();
-        dataResponse.setDesc("Get paging student successfully");
-        dataResponse.setData(pagingStudentResponse);
-        dataResponse.setStatus(HttpStatus.OK.value());
-        return new ResponseEntity<>(dataResponse, HttpStatus.OK);
+        return responseUtil.buildResponse(RestAPIStatus.OK, studentService.pagingStudent(filterStudentRequest)
+                , "Get paging student successfully", HttpStatus.OK);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateStudent(@PathVariable("id") String id, @RequestBody @Valid StudentDTO studentDTO){
         studentDTO.setId(id);
-        studentService.updateStudent(studentDTO);
-        DataResponse dataResponse = new DataResponse();
-        dataResponse.setStatus(200);
-        dataResponse.setDesc("Update Student successfully");
-        return new ResponseEntity<>(dataResponse, HttpStatus.OK);
+        boolean isSuccess = studentService.updateStudent(studentDTO);
+        return responseUtil.buildResponse(RestAPIStatus.OK, isSuccess
+                , "Update Student successfully", HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteStudentById(@PathVariable("id") String id){
-        DataResponse dataResponse = new DataResponse();
-        dataResponse.setData(studentService.deleteStudent(id));
-        dataResponse.setDesc("Delete student successfully");
-        return new ResponseEntity<>(dataResponse, HttpStatus.OK);
+        boolean isSuccess = studentService.deleteStudent(id);
+        return responseUtil.buildResponse(RestAPIStatus.OK, isSuccess
+                , "Delete student successfully", HttpStatus.OK);
     }
 }

@@ -2,12 +2,10 @@ package com.student_demo_digiex.service.imp;
 
 import com.student_demo_digiex.common.exception.custom.APIRequestException;
 import com.student_demo_digiex.common.utils.Constant;
-import com.student_demo_digiex.dto.ClassDTO;
+import com.student_demo_digiex.common.utils.UniqueID;
 import com.student_demo_digiex.dto.StudentDTO;
 import com.student_demo_digiex.dto.SubjectDTO;
-import com.student_demo_digiex.dto.mapper.ClassMapper;
 import com.student_demo_digiex.dto.mapper.StudentMapper;
-import com.student_demo_digiex.entity.ClassEntity;
 import com.student_demo_digiex.entity.StudentEntity;
 import com.student_demo_digiex.entity.SubjectEntity;
 import com.student_demo_digiex.model.request.FilterStudentRequest;
@@ -18,7 +16,10 @@ import com.student_demo_digiex.repository.SubjectRepository;
 import com.student_demo_digiex.service.ClassService;
 import com.student_demo_digiex.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,7 +48,7 @@ public class StudentServiceImp implements StudentService {
     @Override
     public List<StudentDTO> get3StudentSortByScoreAndDob(String rank) {
         return switch (rank) {
-            case "EXCELLENT" -> findTop3ByScoreBetweenOrderByScoreDescDobAsc(10, Constant.EXCELLENT);
+            case "EXCELLENT" -> findTop3ByScoreBetweenOrderByScoreDescDobAsc(Constant.MAX, Constant.EXCELLENT);
             case "GOOD" -> findTop3ByScoreBetweenOrderByScoreDescDobAsc(Constant.EXCELLENT, Constant.GOOD);
             case "AVERAGE" -> findTop3ByScoreBetweenOrderByScoreDescDobAsc(Constant.GOOD, Constant.AVERAGE);
             case "WEAK" -> findTop3ByScoreBetweenOrderByScoreDescDobAsc(Constant.AVERAGE, Constant.WEAK);
@@ -149,6 +150,7 @@ public class StudentServiceImp implements StudentService {
         }
 
         try {
+            studentDTO.setId(UniqueID.getUUID());
             StudentEntity studentEntity = dtoToEntity(studentDTO);
             studentEntity.setClassEntity(classRepository.findById(studentDTO.getIdClass()).orElse(null));
             studentSaved = studentRepository.save(studentEntity);
@@ -296,14 +298,14 @@ public class StudentServiceImp implements StudentService {
                 (studentRepository.findAll());
 
         //Filter get only 3 student with appropriate score
-        if(maxScore == 10){
+        if(maxScore == Constant.MAX){
             studentDTOList = studentDTOList.stream()
                     .filter(studen -> studen.getAverageScore() >= 8)
                     .sorted((o1, o2) -> compare(o2.getAverageScore(), o1.getAverageScore()))
                     .sorted(Comparator.comparingDouble(StudentDTO::getAverageScore))
                     .limit(3)
                     .collect(Collectors.toList());
-        } else if (minScore == 0) {
+        } else if (minScore == Constant.POOR) {
             System.out.println("vào");
             studentDTOList = studentDTOList.stream()
                     .filter(studen -> studen.getAverageScore() < 3)
