@@ -1,28 +1,25 @@
 package com.student_demo_digiex.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.student_demo_digiex.common.enums.Status;
+import com.student_demo_digiex.model.request.UpdateStudentRequest;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.validation.Valid;
-import javax.validation.constraints.*;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class StudentDTO {
-
-    @NotNull(message = "Id is mandatory")
     private String id;
 
-    @NotNull(message = "First name is mandatory")
     private String firstName;
 
-    @NotNull(message = "Last name is mandatory")
     private String lastName;
 
-    @NotNull(message = "Email is mandatory")
-    @Email
     private String email;
 
     private Date dob;
@@ -31,17 +28,37 @@ public class StudentDTO {
 
     private String gender;
 
-    @Pattern(regexp = "\\d{10}$", message = "Phone number must be 10 digits")
-    @NotNull(message = "Phone number is mandatory")
     private String phoneNumber;
 
-    private String status;
+    private Status status;
 
-    @Size(min = 3, max = 5, message = "must have min 3 subject and max 5")
-    @Valid
     private List<SubjectDTO> subjectDTOS;
 
     private String idClass;
 
-    private double averageScore;
+    private Double averageScore;
+
+    public StudentDTO(){}
+
+    public StudentDTO(String idStudent, UpdateStudentRequest updateStudentRequest) {
+        this.id = idStudent;
+        this.firstName = updateStudentRequest.getFirstName();
+        this.lastName = updateStudentRequest.getLastName();
+        this.email = updateStudentRequest.getEmail();
+        this.dob = updateStudentRequest.getDob();
+        this.address = updateStudentRequest.getAddress();
+        this.gender = updateStudentRequest.getGender();
+        this.phoneNumber = updateStudentRequest.getPhoneNumber();
+        this.idClass = updateStudentRequest.getIdClass();
+        this.subjectDTOS = updateStudentRequest.getSubjectRequestList().stream().map(item -> {
+            SubjectDTO subjectDTO = new SubjectDTO();
+            subjectDTO.setNumberOfLessons(item.getNumberOfLessons());
+            subjectDTO.setId(item.getId());
+            subjectDTO.setIdStudent(idStudent);
+            subjectDTO.setStatus(item.getStatus());
+            subjectDTO.setName(item.getName());
+            subjectDTO.setScore(item.getScore());
+            return subjectDTO;
+        }).collect(Collectors.toList());
+    }
 }

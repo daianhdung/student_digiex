@@ -1,5 +1,6 @@
 package com.student_demo_digiex.dto.mapper;
 
+import com.student_demo_digiex.common.enums.Status;
 import com.student_demo_digiex.dto.ClassDTO;
 import com.student_demo_digiex.entity.ClassEntity;
 

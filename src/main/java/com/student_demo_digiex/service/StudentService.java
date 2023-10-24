@@ -1,6 +1,7 @@
 package com.student_demo_digiex.service;
 
 import com.student_demo_digiex.dto.StudentDTO;
+import com.student_demo_digiex.model.request.CreateStudentRequest;
 import com.student_demo_digiex.model.request.FilterStudentRequest;
 import com.student_demo_digiex.model.response.PagingStudentResponse;
 
@@ -14,9 +15,11 @@ public interface StudentService {
 
     PagingStudentResponse pagingStudent(FilterStudentRequest filterStudentRequest);
 
-    boolean createStudent(StudentDTO studentDTO);
+    PagingStudentResponse pagingStudentSpecification(FilterStudentRequest filterStudentRequest);
 
-    boolean updateStudent(StudentDTO studentDTO);
+    StudentDTO createStudent(CreateStudentRequest createStudentRequest);
 
-    boolean deleteStudent(String idStudent);
+    StudentDTO updateStudent(StudentDTO studentDTO);
+
+    void deleteStudent(String idStudent);
 }

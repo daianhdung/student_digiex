@@ -2,11 +2,11 @@ package com.student_demo_digiex.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.student_demo_digiex.common.enums.Status;
 import com.student_demo_digiex.common.utils.Constant;
 import com.student_demo_digiex.common.utils.DateUtil;
 import com.vladmihalcea.hibernate.type.json.JsonType;
 import lombok.Data;
-import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.TypeDef;
 import org.hibernate.annotations.TypeDefs;
 import org.springframework.data.annotation.CreatedDate;
@@ -24,7 +24,6 @@ import java.util.Date;
 @TypeDefs({
         @TypeDef(name = "json", typeClass = JsonType.class)
 })
-@SQLDelete(sql = "UPDATE users SET deleted = true WHERE id = ?")
 public abstract class BaseEntity implements Serializable {
 
     @CreatedDate
@@ -39,8 +38,9 @@ public abstract class BaseEntity implements Serializable {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = Constant.API_FORMAT_DATE)
     protected Date updatedDate;
 
-    @Column(name = "deleted", columnDefinition = "tinyint(1) default 0")
-    protected boolean deleted;
+    @Column(name = "status", length = 45)
+    @Enumerated(EnumType.STRING)
+    protected Status status = Status.ACTIVE;
 
     @PrePersist
     protected void onCreate() {

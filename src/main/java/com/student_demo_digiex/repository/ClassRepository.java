@@ -1,5 +1,6 @@
 package com.student_demo_digiex.repository;
 
+import com.student_demo_digiex.common.enums.Status;
 import com.student_demo_digiex.entity.ClassEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,11 +11,13 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ClassRepository extends JpaRepository<ClassEntity, String> {
+public interface ClassRepository extends JpaRepository<ClassEntity, String>{
 
     @Query(value = "SELECT count(*) FROM student WHERE class_id = :idClass", nativeQuery = true)
     int countStudentInClass(String idClass);
     ClassEntity getClassEntitiesByName(String name);
+
+    ClassEntity findByIdAndStatus(String id, Status status);
 
     @Query(value
             = "SELECT * FROM classes c LEFT JOIN student s ON c.id = s.class_id LEFT JOIN subject sj ON s.id = sj.student_id;", nativeQuery = true)

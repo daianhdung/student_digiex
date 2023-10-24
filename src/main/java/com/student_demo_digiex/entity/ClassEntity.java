@@ -2,6 +2,7 @@ package com.student_demo_digiex.entity;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
+import org.hibernate.annotations.SQLDelete;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
@@ -11,6 +12,7 @@ import java.util.Set;
 @Entity(name = "classes")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EntityListeners(AuditingEntityListener.class)
+@SQLDelete(sql = "UPDATE classes SET status = 'INACTIVE' WHERE id = ?")
 public class ClassEntity extends BaseEntity{
 
     @Id
@@ -22,9 +24,6 @@ public class ClassEntity extends BaseEntity{
 
     @Column(name = "max_student")
     private int maxStudent;
-
-    @Column(name = "status", length = 45)
-    private String status;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "classEntity")
     private Set<StudentEntity> studentEntitySet;

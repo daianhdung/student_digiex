@@ -1,32 +1,31 @@
 package com.student_demo_digiex.model.request;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import com.student_demo_digiex.common.utils.RegexPattern;
+import lombok.*;
 
-import java.util.Date;
+import javax.validation.constraints.Pattern;
 
 @Getter
 @Setter
 @ToString
+@AllArgsConstructor
+@NoArgsConstructor
 public class FilterStudentRequest {
 
     private String classId;
     private String searchTerm;
 
-    private String sortFirstName;
-    private String sortLastName;
-    private String sortEmail;
-    private String sortDob;
-    private String sortPhone;
+    private String sortField;
+    private String sortType;
 
-    private String filterFirstName;
-    private String filterLastName;
-    private String filterEmail;
     private String filterGender;
+
+    @Pattern(regexp = RegexPattern.patternDate, message = "Not a valid date")
     private String filterStartDate;
+
+    @Pattern(regexp = RegexPattern.patternDate, message = "Not a valid date")
     private String filterEndDate;
 
-    private int totalItemEachPage;
-    private int currentPage;
+    private Integer totalItemEachPage;
+    private Integer currentPage;
 }

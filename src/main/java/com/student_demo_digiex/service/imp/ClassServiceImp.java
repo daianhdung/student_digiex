@@ -1,5 +1,6 @@
 package com.student_demo_digiex.service.imp;
 
+import com.student_demo_digiex.common.enums.Status;
 import com.student_demo_digiex.common.exception.custom.APIRequestException;
 import com.student_demo_digiex.common.utils.UniqueID;
 import com.student_demo_digiex.dto.ClassDTO;
@@ -8,6 +9,7 @@ import com.student_demo_digiex.dto.SubjectDTO;
 import com.student_demo_digiex.dto.mapper.ClassMapper;
 import com.student_demo_digiex.dto.mapper.SubjectMapper;
 import com.student_demo_digiex.entity.ClassEntity;
+import com.student_demo_digiex.model.request.CreateClassRequest;
 import com.student_demo_digiex.model.request.FilterClassRequest;
 import com.student_demo_digiex.model.response.PagingClassResponse;
 import com.student_demo_digiex.repository.ClassRepository;
@@ -21,9 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
-import static com.student_demo_digiex.dto.mapper.ClassMapper.dtoToEntity;
 import static com.student_demo_digiex.dto.mapper.ClassMapper.entityToDTO;
 import static com.student_demo_digiex.dto.mapper.StudentMapper.entityToDTO;
 
@@ -32,17 +32,12 @@ public class ClassServiceImp implements ClassService {
 
     @Autowired
     ClassRepository classRepository;
-
     @Override
     public ClassDTO getClassById(String idClass) {
-        Optional<ClassEntity> classEntity = classRepository.findById(idClass);
-        if(classEntity.isPresent()){
-            ClassDTO classDTO = entityToDTO(classEntity.get());
-            classDTO.setStudentCount(classRepository.countStudentInClass(classDTO.getId()));
-            return classDTO;
-        }else{
-            throw new APIRequestException("Could not find the class");
-        }
+        ClassEntity classEntity = checkClassIfExists(idClass);
+        ClassDTO classDTO = entityToDTO(classEntity);
+        classDTO.setStudentCount(classRepository.countStudentInClass(classDTO.getId()));
+        return classDTO;
     }
     @Override
     public List<ClassDTO> getAllClass() {
@@ -53,6 +48,7 @@ public class ClassServiceImp implements ClassService {
         listClassEntity.forEach(classEntity -> {
 
             ClassDTO classDTO = entityToDTO(classEntity);
+            classDTO.setStudentCount(classRepository.countStudentInClass(classDTO.getId()));
             List<StudentDTO> studentDTOS = new ArrayList<>();
 
             classEntity.getStudentEntitySet().forEach(studentEntity -> {
@@ -72,43 +68,44 @@ public class ClassServiceImp implements ClassService {
     }
 
     @Override
-    public boolean createClass(ClassDTO classDTO) {
-        if(classRepository.getClassEntitiesByName(classDTO.getName()) == null){
-            classDTO.setId(UniqueID.getUUID());
-            classRepository.save(dtoToEntity(classDTO));
-            return true;
-        }else{
+    public ClassDTO createClass(CreateClassRequest createClass) {
+        ClassEntity nameExisted = classRepository.getClassEntitiesByName(createClass.getName().trim());
+        if (nameExisted != null){
             throw new APIRequestException("Class name already exists");
         }
+        ClassEntity classEntity = new ClassEntity();
+        classEntity.setId(UniqueID.getUUID());
+        classEntity.setStatus(Status.ACTIVE);
+        classEntity.setMaxStudent(createClass.getMaxStudent());
+        classEntity.setName(createClass.getName().trim());
+        classRepository.save(classEntity);
+        return entityToDTO(classEntity);
     }
 
     @Override
-    public boolean updateClass(ClassDTO classDTO) {
-        if(classRepository.getClassEntitiesByName(classDTO.getName()) == null){
-            Optional<ClassEntity> classEntity = classRepository.findById(classDTO.getId());
-            if(classEntity.isPresent()){
-                classEntity.get().setName(classDTO.getName());
-                classEntity.get().setStatus(classDTO.getStatus());
-                classEntity.get().setMaxStudent(classDTO.getMaxStudent());
-            }else{
-                throw new APIRequestException("Could not find the class");
+    public ClassDTO updateClass(ClassDTO classDTO) {
+        ClassEntity classEntity = checkClassIfExists(classDTO.getId());
+        if (classEntity == null){
+            throw new APIRequestException("Class not found");
+        }
+
+        if (classDTO.getName() != null && !classDTO.getName().trim().isEmpty()){
+            ClassEntity nameExisted = classRepository.getClassEntitiesByName(classDTO.getName().trim());
+            if (nameExisted != null && !classEntity.getId().equals(nameExisted.getId())){
+                throw new APIRequestException("Class name already exists");
             }
-            classRepository.save(classEntity.get());
-            return true;
-        }else{
-            throw new APIRequestException("Class name already exists");
+            classEntity.setName(classEntity.getName().trim());
         }
+        if (classDTO.getMaxStudent() != null){
+            classEntity.setMaxStudent(classDTO.getMaxStudent());
+        }
+        classRepository.save(classEntity);
+        return entityToDTO(classEntity);
     }
 
     @Override
-    public boolean deleteClass(String idClass) {
-        Optional<ClassEntity> classEntity = classRepository.findById(idClass);
-        if(classEntity.isPresent()){
-            classRepository.delete(classEntity.get());
-            return true;
-        }else{
-            throw new APIRequestException("Could not find the class");
-        }
+    public void deleteClass(String idClass) {
+        classRepository.delete(checkClassIfExists(idClass));
     }
 
     @Override
@@ -121,38 +118,32 @@ public class ClassServiceImp implements ClassService {
 
         Pageable pageable = PageRequest.of(currentPage, totalItem);
 
-        String sortName = filterClassRequest.getSortNameType();
-        String sortStudentCount = filterClassRequest.getSortStudentCount();
-        if(sortName.equals("nameAsc")){
-            pageable = PageRequest.of(currentPage, totalItem, Sort.by("name").ascending());
-        } else if (sortName.equals("nameDesc")) {
-            pageable = PageRequest.of(currentPage, totalItem, Sort.by("name").descending());
-        }
-        if(sortStudentCount.equals("maxStudentAsc")){
-            pageable = PageRequest.of(currentPage, totalItem, Sort.by("maxStudent").ascending());
-        } else if (sortStudentCount.equals("maxStudentDesc")) {
-            pageable = PageRequest.of(currentPage, totalItem, Sort.by("maxStudent").descending());
+        if(filterClassRequest.getSortType().equals("asc")){
+            pageable = PageRequest.of(currentPage, totalItem, Sort.by(filterClassRequest.getSortField()).ascending());
+        } else if (filterClassRequest.getSortType().equals("desc")) {
+            pageable = PageRequest.of(currentPage, totalItem, Sort.by(filterClassRequest.getSortField()).descending());
         }
 
         Page<ClassEntity> page = classRepository
-                .findByNameContainingIgnoreCase(filterClassRequest.getSearchKeyword()
+                .findByNameContainingIgnoreCase(filterClassRequest.getSearchKeyword().trim()
                         , pageable);
+
         List<ClassDTO> classDTOList = page.getContent()
                 .stream()
                 .map(ClassMapper::entityToDTO).toList();
 
         PagingClassResponse pagingClassResponse = new PagingClassResponse();
         pagingClassResponse.setClassDTOS(classDTOList);
-        pagingClassResponse.setCurrentPage(currentPage);
+        pagingClassResponse.setCurrentPage(filterClassRequest.getCurrentPage());
         pagingClassResponse.setTotalPage(page.getTotalPages());
 
         return pagingClassResponse;
     }
 
     public ClassEntity checkClassIfExists(String idClass) {
-        Optional<ClassEntity> classEntity = classRepository.findById(idClass);
-        if (classEntity.isPresent()) {
-            return classEntity.get();
+        ClassEntity classEntity = classRepository.findByIdAndStatus(idClass, Status.ACTIVE);
+        if (classEntity != null) {
+            return classEntity;
         } else {
             throw new APIRequestException("Could not find class");
         }

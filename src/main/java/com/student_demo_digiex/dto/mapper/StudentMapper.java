@@ -35,4 +35,28 @@ public class StudentMapper {
         studentEntity.setSubjectEntities(studentDTO.getSubjectDTOS().stream().map(SubjectMapper::dtoToEntity).collect(Collectors.toSet()));
         return studentEntity;
     }
+
+    public static StudentEntity dtoToEntityUpdate(StudentEntity studentEntity, StudentDTO studentDTO){
+        if(studentDTO.getEmail() != null && !studentDTO.getEmail().trim().isEmpty()){
+            studentEntity.setEmail(studentDTO.getEmail());
+        }
+        if(studentDTO.getDob() != null){
+            studentEntity.setDob(studentDTO.getDob());
+        }
+        if(studentDTO.getGender() != null && !studentDTO.getGender().trim().isEmpty()){
+            studentEntity.setEmail(studentDTO.getGender());
+        }
+        if(studentDTO.getFirstName() != null && !studentDTO.getFirstName().trim().isEmpty()){
+            studentEntity.setEmail(studentDTO.getFirstName());
+        }
+
+        if(studentDTO.getLastName() != null && !studentDTO.getLastName().trim().isEmpty()){
+            studentEntity.setEmail(studentDTO.getLastName());
+        }
+
+        if(studentDTO.getPhoneNumber() != null && !studentDTO.getPhoneNumber().trim().isEmpty()){
+            studentEntity.setEmail(studentDTO.getPhoneNumber());
+        }
+        return studentEntity;
+    }
 }

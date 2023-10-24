@@ -3,16 +3,11 @@ package com.student_demo_digiex.entity;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.SQLDelete;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
-import java.time.Instant;
 import java.util.Date;
-import java.util.List;
 import java.util.Set;
 
 @Entity(name = "student")
@@ -20,6 +15,7 @@ import java.util.Set;
 @EqualsAndHashCode(exclude = "classEntity")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EntityListeners(AuditingEntityListener.class)
+@SQLDelete(sql = "UPDATE student SET status = 'INACTIVE' WHERE id = ?")
 public class StudentEntity extends BaseEntity{
 
     @Id
@@ -46,9 +42,6 @@ public class StudentEntity extends BaseEntity{
 
     @Column(name = "phone_number", length = 10, unique = true)
     private String phoneNumber;
-
-    @Column(name = "status", length = 45)
-    private String status;
 
     @ManyToOne
     @JoinColumn(name = "class_id")

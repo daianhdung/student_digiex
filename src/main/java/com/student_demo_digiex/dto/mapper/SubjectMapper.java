@@ -12,6 +12,7 @@ public class SubjectMapper {
         subjectDTO.setStatus(subjectEntity.getStatus());
         subjectDTO.setScore(subjectEntity.getScore());
         subjectDTO.setNumberOfLessons(subjectEntity.getNumberOfLessons());
+        subjectDTO.setIdStudent(subjectEntity.getStudentEntity().getId());
         return subjectDTO;
     }
 

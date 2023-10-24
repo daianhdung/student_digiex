@@ -3,10 +3,9 @@ package com.student_demo_digiex.controller;
 
 import com.student_demo_digiex.common.utils.RestAPIStatus;
 import com.student_demo_digiex.dto.StudentDTO;
+import com.student_demo_digiex.model.request.CreateStudentRequest;
 import com.student_demo_digiex.model.request.FilterStudentRequest;
-import com.student_demo_digiex.model.response.DataResponse;
-import com.student_demo_digiex.model.response.PagingStudentResponse;
-import com.student_demo_digiex.repository.StudentRepository;
+import com.student_demo_digiex.model.request.UpdateStudentRequest;
 import com.student_demo_digiex.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,16 +18,31 @@ import javax.validation.Valid;
 @CrossOrigin
 @RequestMapping("/student")
 public class StudentController extends BaseController{
-
     @Autowired
     StudentService studentService;
-    @Autowired
-    StudentRepository studentRepository;
 
-    @GetMapping("rank/{rank}")
-    public ResponseEntity<?> getStudentByRank(@PathVariable("rank") String rank){
-        return responseUtil.buildResponse(RestAPIStatus.OK, studentService.get3StudentSortByScoreAndDob(rank.toUpperCase())
-                , HttpStatus.OK);
+    @PostMapping
+    public ResponseEntity<?> createStudent(@RequestBody @Valid CreateStudentRequest createStudentRequest){
+        return responseUtil.buildResponse(RestAPIStatus.OK, studentService.createStudent(createStudentRequest)
+                , "Create Student successfully", HttpStatus.OK);
+    }
+
+    @GetMapping()
+    public ResponseEntity<?> getStudentByFilter(@RequestParam("classId") String classId,
+                                                @RequestParam("searchTerm") String searchTerm,
+                                                @RequestParam("sortField") String sortField,
+                                                @RequestParam("sortType") String sortType,
+                                                @RequestParam(value = "filterGender", required = false) String filterGender,
+                                                @RequestParam(value = "filterStartDate", required = false) String filterStartDate,
+                                                @RequestParam(value = "filterEndDate", required = false) String filterEndDate,
+                                                @RequestParam("totalItemEachPage") Integer totalItemEachPage,
+                                                @RequestParam("currentPage") Integer currentPage
+                                                ) {
+        FilterStudentRequest filterStudentRequest = new FilterStudentRequest(classId, searchTerm, sortField, sortType
+                , filterGender, filterStartDate, filterEndDate, totalItemEachPage
+        , currentPage);
+        return responseUtil.buildResponse(RestAPIStatus.OK, studentService.pagingStudent(filterStudentRequest)
+                , "Get paging student successfully", HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
@@ -43,31 +57,27 @@ public class StudentController extends BaseController{
                 , HttpStatus.OK);
     }
 
-    @PostMapping
-    public ResponseEntity<?> createStudent(@RequestBody @Valid StudentDTO studentDTO){
-        boolean isSuccess = studentService.createStudent(studentDTO);
-        return responseUtil.buildResponse(RestAPIStatus.OK, isSuccess
-                , "Create Student successfully", HttpStatus.OK);
+    @GetMapping("rank/{rank}")
+    public ResponseEntity<?> getStudentByRank(@PathVariable("rank") String rank){
+        return responseUtil.buildResponse(RestAPIStatus.OK, studentService.get3StudentSortByScoreAndDob(rank.toUpperCase())
+                , HttpStatus.OK);
     }
 
-    @PostMapping("/filter")
-    public ResponseEntity<?> getStudentByFilter(@RequestBody FilterStudentRequest filterStudentRequest) {
-        return responseUtil.buildResponse(RestAPIStatus.OK, studentService.pagingStudent(filterStudentRequest)
-                , "Get paging student successfully", HttpStatus.OK);
-    }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateStudent(@PathVariable("id") String id, @RequestBody @Valid StudentDTO studentDTO){
-        studentDTO.setId(id);
-        boolean isSuccess = studentService.updateStudent(studentDTO);
-        return responseUtil.buildResponse(RestAPIStatus.OK, isSuccess
+    public ResponseEntity<?> updateStudent(
+            @PathVariable("id") String id,
+            @RequestBody @Valid UpdateStudentRequest updateStudentRequest)
+    {
+        StudentDTO studentDTO = new StudentDTO(id, updateStudentRequest);
+        return responseUtil.buildResponse(RestAPIStatus.OK, studentService.updateStudent(studentDTO)
                 , "Update Student successfully", HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteStudentById(@PathVariable("id") String id){
-        boolean isSuccess = studentService.deleteStudent(id);
-        return responseUtil.buildResponse(RestAPIStatus.OK, isSuccess
+        studentService.deleteStudent(id);
+        return responseUtil.buildResponse(RestAPIStatus.OK, ""
                 , "Delete student successfully", HttpStatus.OK);
     }
 }

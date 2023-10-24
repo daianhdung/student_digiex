@@ -1,31 +1,48 @@
 package com.student_demo_digiex.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.student_demo_digiex.common.enums.Status;
+import com.student_demo_digiex.common.utils.Constant;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.NotNull;
+import java.util.Date;
 import java.util.List;
 
 @Getter
 @Setter
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ClassDTO {
 
-    @NotNull(message = "Id is mandatory")
     private String id;
-
-    @NotNull(message = "Name is mandatory")
     private String name;
+    private Integer maxStudent;
 
-    @Max(value = 20, message = "Class can't have more than 20 students")
-    @NotNull(message = "Max Student is mandatory")
-    private int maxStudent;
+    private Status status;
 
-    @NotNull(message = "Status is mandatory")
-    private String status;
+    private Integer studentCount;
 
-    private int studentCount;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = Constant.API_FORMAT_DATE)
+    private Date createdDate;
 
     List<StudentDTO> studentDTOList;
 
+    public ClassDTO(String id, String name, Integer maxStudent) {
+        this.id = id;
+        this.name = name;
+        this.maxStudent = maxStudent;
+    }
+
+    public ClassDTO(String id, String name, Integer maxStudent, Status status, Integer studentCount, Date createdDate, List<StudentDTO> studentDTOList) {
+        this.id = id;
+        this.name = name;
+        this.maxStudent = maxStudent;
+        this.status = status;
+        this.studentCount = studentCount;
+        this.createdDate = createdDate;
+        this.studentDTOList = studentDTOList;
+    }
+
+    public ClassDTO(){}
 }

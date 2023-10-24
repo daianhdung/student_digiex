@@ -1,30 +1,24 @@
 package com.student_demo_digiex.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.student_demo_digiex.common.enums.Status;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
-
 @Getter
 @Setter
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SubjectDTO {
 
-    @NotNull(message = "Id is mandatory")
     private String id;
 
-    @NotNull(message = "Name is mandatory")
     private String name;
 
-    @Max(value = 10, message = "Cannot higher than 10")
-    @Min(value = 0, message = "Cannot lower than 0")
     private double score;
 
-    @NotNull(message = "Number of Lessons is mandatory")
     private int numberOfLessons;
 
-    private String status;
+    private Status status;
 
     private String idStudent;
 }

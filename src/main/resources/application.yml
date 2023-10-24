@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/student_digiex
+    url: jdbc:mysql://localhost:3306/student_digiex2
     username: root
     password: admin123
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -15,7 +15,9 @@ spring:
 server:
   servlet:
     context-path: /api
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
 
