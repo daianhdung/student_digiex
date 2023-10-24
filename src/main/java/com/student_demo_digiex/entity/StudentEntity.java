@@ -12,7 +12,7 @@ import java.util.Set;
 
 @Entity(name = "student")
 @Data
-@EqualsAndHashCode(exclude = "classEntity")
+//@EqualsAndHashCode(exclude = "classEntity")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EntityListeners(AuditingEntityListener.class)
 @SQLDelete(sql = "UPDATE student SET status = 'INACTIVE' WHERE id = ?")
@@ -43,10 +43,6 @@ public class StudentEntity extends BaseEntity{
     @Column(name = "phone_number", length = 10, unique = true)
     private String phoneNumber;
 
-    @ManyToOne
-    @JoinColumn(name = "class_id")
-    private ClassEntity classEntity;
-
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "studentEntity")
-    private Set<SubjectEntity> subjectEntities;
+    @Column(name = "class_id")
+    private String classId;
 }

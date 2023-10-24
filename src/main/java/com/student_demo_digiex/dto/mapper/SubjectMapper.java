@@ -12,7 +12,7 @@ public class SubjectMapper {
         subjectDTO.setStatus(subjectEntity.getStatus());
         subjectDTO.setScore(subjectEntity.getScore());
         subjectDTO.setNumberOfLessons(subjectEntity.getNumberOfLessons());
-        subjectDTO.setIdStudent(subjectEntity.getStudentEntity().getId());
+        subjectDTO.setIdStudent(subjectEntity.getStudentId());
         return subjectDTO;
     }
 
@@ -23,6 +23,7 @@ public class SubjectMapper {
         subjectEntity.setStatus(subjectDTO.getStatus());
         subjectEntity.setScore(subjectDTO.getScore());
         subjectEntity.setNumberOfLessons(subjectDTO.getNumberOfLessons());
+        subjectEntity.setStudentId(subjectEntity.getStudentId());
         return subjectEntity;
     }
 }

@@ -17,8 +17,7 @@ public class StudentMapper {
         studentDTO.setFirstName(studentEntity.getFirstName());
         studentDTO.setLastName(studentEntity.getLastName());
         studentDTO.setPhoneNumber(studentEntity.getPhoneNumber());
-        studentDTO.setIdClass(studentEntity.getClassEntity().getId());
-        studentDTO.setSubjectDTOS(studentEntity.getSubjectEntities().stream().map(SubjectMapper::entityToDTO).toList());
+        studentDTO.setIdClass(studentEntity.getClassId());
         return studentDTO;
     }
 
@@ -32,7 +31,6 @@ public class StudentMapper {
         studentEntity.setFirstName(studentDTO.getFirstName());
         studentEntity.setLastName(studentDTO.getLastName());
         studentEntity.setPhoneNumber(studentDTO.getPhoneNumber());
-        studentEntity.setSubjectEntities(studentDTO.getSubjectDTOS().stream().map(SubjectMapper::dtoToEntity).collect(Collectors.toSet()));
         return studentEntity;
     }
 

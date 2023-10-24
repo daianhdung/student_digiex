@@ -17,18 +17,18 @@ public class UpdateSubjectRequest {
 
     @Max(value = 10, message = "Cannot higher than 10")
     @Min(value = 0, message = "Cannot lower than 0")
-    private double score;
+    private Double score;
 
-    private int numberOfLessons;
+    private Integer numberOfLessons;
 
     private Status status;
 
-    public static SubjectEntity requestToEntity(CreateSubjectRequest createSubjectRequest){
-        SubjectEntity subjectEntity = new SubjectEntity();
-        subjectEntity.setName(createSubjectRequest.getName());
-        subjectEntity.setStatus(Status.ACTIVE);
-        subjectEntity.setScore(createSubjectRequest.getScore());
-        subjectEntity.setNumberOfLessons(createSubjectRequest.getNumberOfLessons());
-        return subjectEntity;
-    }
+//    public static SubjectEntity requestToEntity(CreateSubjectRequest createSubjectRequest){
+//        SubjectEntity subjectEntity = new SubjectEntity();
+//        subjectEntity.setName(createSubjectRequest.getName());
+//        subjectEntity.setStatus(Status.ACTIVE);
+//        subjectEntity.setScore(createSubjectRequest.getScore());
+//        subjectEntity.setNumberOfLessons(createSubjectRequest.getNumberOfLessons());
+//        return subjectEntity;
+//    }
 }

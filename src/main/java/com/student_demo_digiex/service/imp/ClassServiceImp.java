@@ -9,10 +9,14 @@ import com.student_demo_digiex.dto.SubjectDTO;
 import com.student_demo_digiex.dto.mapper.ClassMapper;
 import com.student_demo_digiex.dto.mapper.SubjectMapper;
 import com.student_demo_digiex.entity.ClassEntity;
+import com.student_demo_digiex.entity.StudentEntity;
+import com.student_demo_digiex.entity.SubjectEntity;
 import com.student_demo_digiex.model.request.CreateClassRequest;
 import com.student_demo_digiex.model.request.FilterClassRequest;
 import com.student_demo_digiex.model.response.PagingClassResponse;
 import com.student_demo_digiex.repository.ClassRepository;
+import com.student_demo_digiex.repository.StudentRepository;
+import com.student_demo_digiex.repository.SubjectRepository;
 import com.student_demo_digiex.service.ClassService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -32,6 +36,10 @@ public class ClassServiceImp implements ClassService {
 
     @Autowired
     ClassRepository classRepository;
+    @Autowired
+    StudentRepository studentRepository;
+    @Autowired
+    SubjectRepository subjectRepository;
     @Override
     public ClassDTO getClassById(String idClass) {
         ClassEntity classEntity = checkClassIfExists(idClass);
@@ -42,20 +50,20 @@ public class ClassServiceImp implements ClassService {
     @Override
     public List<ClassDTO> getAllClass() {
         List<ClassEntity> listClassEntity = classRepository.findAll();
+        List<StudentEntity> studentEntityList = studentRepository.findAll();
+        List<SubjectEntity> subjectEntityList = subjectRepository.findAll();
 
         List<ClassDTO> classDTOList = new ArrayList<>();
-
         listClassEntity.forEach(classEntity -> {
-
             ClassDTO classDTO = entityToDTO(classEntity);
             classDTO.setStudentCount(classRepository.countStudentInClass(classDTO.getId()));
             List<StudentDTO> studentDTOS = new ArrayList<>();
 
-            classEntity.getStudentEntitySet().forEach(studentEntity -> {
+            studentEntityList.stream().filter(item -> item.getClassId().equals(classEntity.getId())).forEach(studentEntity -> {
                 StudentDTO studentDTO = entityToDTO(studentEntity);
-
-                List<SubjectDTO> subjectDTOList = studentEntity.getSubjectEntities()
+                List<SubjectDTO> subjectDTOList = subjectEntityList
                         .stream()
+                        .filter(item -> item.getStudentId().equals(studentDTO.getId()))
                         .map(SubjectMapper::entityToDTO).toList();
                 studentDTO.setSubjectDTOS(subjectDTOList);
                 studentDTOS.add(studentDTO);
@@ -106,6 +114,9 @@ public class ClassServiceImp implements ClassService {
     @Override
     public void deleteClass(String idClass) {
         classRepository.delete(checkClassIfExists(idClass));
+        studentRepository.deleteAllByClassId(idClass);
+        List<String> studentIds = studentRepository.findAllIdStudentByClassId(idClass);
+        subjectRepository.deleteAllByStudentIdIsIn(studentIds);
     }
 
     @Override

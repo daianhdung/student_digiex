@@ -16,7 +16,7 @@ public class UpdateStudentRequest {
 
     private String lastName;
 
-    @Email
+    @Email(message = "Not valid email address")
     private String email;
 
     private Date dob;
@@ -28,7 +28,6 @@ public class UpdateStudentRequest {
     @Pattern(regexp = "\\d{10}$", message = "Phone number must be 10 digits")
     private String phoneNumber;
 
-    @Size(min = 3, max = 5, message = "must have min 3 subject and max 5")
     @Valid
     private List<UpdateSubjectRequest> subjectRequestList;
 

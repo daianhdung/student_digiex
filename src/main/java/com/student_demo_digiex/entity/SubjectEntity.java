@@ -10,7 +10,7 @@ import javax.persistence.*;
 
 @Entity(name = "subject")
 @Data
-@EqualsAndHashCode(exclude = "studentEntity")
+//@EqualsAndHashCode(exclude = "studentEntity")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EntityListeners(AuditingEntityListener.class)
 @SQLDelete(sql = "UPDATE subject SET status = 'INACTIVE' WHERE id = ?")
@@ -29,9 +29,8 @@ public class SubjectEntity extends BaseEntity{
     @Column(name = "number_of_lessons")
     private int numberOfLessons;
 
-    @ManyToOne
-    @JoinColumn(name = "student_id")
-    private StudentEntity studentEntity;
+    @Column(name = "student_id")
+    private String studentId;
 
 
 }

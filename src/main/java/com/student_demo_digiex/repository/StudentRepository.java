@@ -18,7 +18,7 @@ public interface StudentRepository extends JpaRepository<StudentEntity, String>,
     StudentEntity findByEmail(String email);
     StudentEntity findByPhoneNumber(String phoneNumber);
 
-    List<StudentEntity> findAllByClassEntityId(String classId);
+    List<StudentEntity> findAllByClassId(String classId);
 
     @Query(value = "SELECT sj.name FROM student s LEFT JOIN subject sj ON s.id = sj.student_id", nativeQuery = true)
     Set<String> getListSubjectNameByStudentId(String studentId);
@@ -42,24 +42,9 @@ public interface StudentRepository extends JpaRepository<StudentEntity, String>,
             @Param("dobMin") String dobMin,
             @Param("dobMax") String dobMax, Pageable pageable);
 
+    int deleteAllByClassId(String idClass);
 
-//    @Query(value =
-//            "SELECT * FROM student s " +
-//                    "WHERE  s.first_name LIKE :firstNameContains " +
-//                    "AND s.last_name LIKE :lastNameContains " +
-//                    "AND s.email LIKE :emailContains " +
-//                    "AND s.gender LIKE :gender " +
-//                    "AND s.dob >= :dobMin " +
-//                    "AND s.dob <= :dobMax",
-//            nativeQuery = true)
-//    Page<StudentEntity> findStudentsByFilter(
-//            @Param("firstNameContains") String firstNameContains,
-//            @Param("lastNameContains") String lastNameContains,
-//            @Param("emailContains") String emailContains,
-//            @Param("gender") String gender,
-//            @Param("dobMin") String dobMin,
-//            @Param("dobMax") String dobMax, Pageable pageable);
-
-
+    @Query(value = "SELECT id FROM student WHERE class_id = :classId", nativeQuery = true)
+    List<String> findAllIdStudentByClassId(String classId);
 
 }

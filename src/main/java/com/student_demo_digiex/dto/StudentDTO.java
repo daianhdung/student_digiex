@@ -38,26 +38,26 @@ public class StudentDTO {
 
     private Double averageScore;
 
-    public StudentDTO(){}
+    public StudentDTO() {
+    }
 
     public StudentDTO(String idStudent, UpdateStudentRequest updateStudentRequest) {
         this.id = idStudent;
-        this.firstName = updateStudentRequest.getFirstName();
-        this.lastName = updateStudentRequest.getLastName();
-        this.email = updateStudentRequest.getEmail();
-        this.dob = updateStudentRequest.getDob();
-        this.address = updateStudentRequest.getAddress();
-        this.gender = updateStudentRequest.getGender();
-        this.phoneNumber = updateStudentRequest.getPhoneNumber();
-        this.idClass = updateStudentRequest.getIdClass();
+        this.firstName = updateStudentRequest.getFirstName() != null ? updateStudentRequest.getFirstName() : null;
+        this.lastName = updateStudentRequest.getLastName() != null ? updateStudentRequest.getLastName() : null;
+        this.email = updateStudentRequest.getEmail() != null ? updateStudentRequest.getEmail() : null;
+        this.dob = updateStudentRequest.getDob() != null ? updateStudentRequest.getDob() : null;
+        this.address = updateStudentRequest.getAddress() != null ? updateStudentRequest.getAddress() : null;
+        this.gender = updateStudentRequest.getGender() != null ? updateStudentRequest.getGender() : null;
+        this.phoneNumber = updateStudentRequest.getPhoneNumber() != null ? updateStudentRequest.getPhoneNumber() : null;
+        this.idClass = updateStudentRequest.getIdClass() != null ? updateStudentRequest.getIdClass() : null;
         this.subjectDTOS = updateStudentRequest.getSubjectRequestList().stream().map(item -> {
             SubjectDTO subjectDTO = new SubjectDTO();
-            subjectDTO.setNumberOfLessons(item.getNumberOfLessons());
-            subjectDTO.setId(item.getId());
-            subjectDTO.setIdStudent(idStudent);
-            subjectDTO.setStatus(item.getStatus());
-            subjectDTO.setName(item.getName());
-            subjectDTO.setScore(item.getScore());
+            subjectDTO.setNumberOfLessons(item.getNumberOfLessons() != null ? item.getNumberOfLessons() : null);
+            subjectDTO.setId(item.getId() != null ? item.getId() : null);
+            subjectDTO.setStatus(item.getStatus() != null ? item.getStatus() : null);
+            subjectDTO.setName(item.getName() != null ? item.getName() : null);
+            subjectDTO.setScore(item.getScore() != null ? item.getScore() : null);
             return subjectDTO;
         }).collect(Collectors.toList());
     }

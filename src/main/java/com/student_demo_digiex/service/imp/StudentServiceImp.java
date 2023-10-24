@@ -7,6 +7,7 @@ import com.student_demo_digiex.common.utils.UniqueID;
 import com.student_demo_digiex.dto.StudentDTO;
 import com.student_demo_digiex.dto.SubjectDTO;
 import com.student_demo_digiex.dto.mapper.StudentMapper;
+import com.student_demo_digiex.dto.mapper.SubjectMapper;
 import com.student_demo_digiex.entity.StudentEntity;
 import com.student_demo_digiex.entity.SubjectEntity;
 import com.student_demo_digiex.model.request.CreateStudentRequest;
@@ -33,8 +34,8 @@ import java.util.stream.Collectors;
 
 import static com.student_demo_digiex.dto.mapper.StudentMapper.dtoToEntityUpdate;
 import static com.student_demo_digiex.dto.mapper.StudentMapper.entityToDTO;
-import static com.student_demo_digiex.dto.mapper.SubjectMapper.dtoToEntity;
 import static com.student_demo_digiex.dto.mapper.SubjectMapper.entityToDTO;
+import static com.student_demo_digiex.dto.mapper.SubjectMapper.dtoToEntity;
 import static com.student_demo_digiex.model.request.CreateSubjectRequest.requestToEntity;
 import static java.lang.Double.compare;
 
@@ -66,7 +67,7 @@ public class StudentServiceImp implements StudentService {
     public List<StudentDTO> getAllStudentByClassIdDefaultSortHighScore(String classId) {
         classService.checkClassIfExists(classId);
 
-        List<StudentDTO> studentDTOList = getAllStudentWithAverageScore(studentRepository.findAllByClassEntityId(classId));
+        List<StudentDTO> studentDTOList = getAllStudentWithAverageScore(studentRepository.findAllByClassId(classId));
         return studentDTOList
                 .stream()
                 .sorted((o2, o1) -> compare(o1.getAverageScore(), o2.getAverageScore()))
@@ -78,10 +79,12 @@ public class StudentServiceImp implements StudentService {
         StudentEntity studentEntity = checkStudentIfExists(idStudent);
         StudentDTO studentDTO = entityToDTO(studentEntity);
         double averageScore = 0;
-        for (var item : studentEntity.getSubjectEntities()) {
+
+        List<SubjectEntity> listSubjectEntity = subjectRepository.findAllByStudentIdAndStatus(studentEntity.getId(), Status.ACTIVE);
+        for (var item : listSubjectEntity) {
             averageScore += item.getScore();
         }
-        averageScore = averageScore / studentEntity.getSubjectEntities().size();
+        averageScore = averageScore / listSubjectEntity.size();
         studentDTO.setAverageScore(averageScore);
         return studentDTO;
     }
@@ -200,7 +203,7 @@ public class StudentServiceImp implements StudentService {
             studentEntity.setLastName(createStudentRequest.getLastName().trim());
             studentEntity.setAddress(createStudentRequest.getAddress().trim());
             studentEntity.setFirstName(createStudentRequest.getFirstName().trim());
-            studentEntity.setClassEntity(classRepository.findById(createStudentRequest.getIdClass()).orElse(null));
+            studentEntity.setClassId(createStudentRequest.getIdClass());
             studentSaved = studentRepository.save(studentEntity);
         } catch (Exception e) {
             throw new APIRequestException(e.getMessage());
@@ -219,13 +222,12 @@ public class StudentServiceImp implements StudentService {
                     SubjectEntity subjectEntity = requestToEntity(item);
                     subjectEntity.setId(UniqueID.getUUID());
                     subjectEntity.setStatus(Status.ACTIVE);
-                    subjectEntity.setStudentEntity(studentSaved);
+                    subjectEntity.setStudentId(studentSaved.getId());
                     subjectEntities.add(subjectEntity);
                 }
             }
-            studentSaved.setSubjectEntities(new HashSet<>(subjectEntities));
             try {
-                studentRepository.save(studentSaved);
+                subjectRepository.saveAll(subjectEntities);
             } catch (Exception e) {
                 throw new APIRequestException("Error saving student");
             }
@@ -239,49 +241,88 @@ public class StudentServiceImp implements StudentService {
         StudentEntity studentSaved;
         //Check student is duplicated and email, phone duplicated or not
         StudentEntity oldDetailStudent = checkStudentIfExists(studentDTO.getId());
-        if (studentRepository.existsByEmailAndIdNot(studentDTO.getEmail(), studentDTO.getId()) ||
-                studentRepository.existsByPhoneNumberAndIdNot(studentDTO.getPhoneNumber(), studentDTO.getId())) {
+        if (studentDTO.getEmail() != null && studentRepository.existsByEmailAndIdNot(studentDTO.getEmail(), studentDTO.getId())
+                ||
+                studentDTO.getPhoneNumber() != null && studentRepository.existsByPhoneNumberAndIdNot(studentDTO.getPhoneNumber(), studentDTO.getId())) {
             throw new APIRequestException("Email or phone is already used by another student");
         }
         try {
             dtoToEntityUpdate(oldDetailStudent, studentDTO);
             studentSaved = studentRepository.save(oldDetailStudent);
+
+            if (studentDTO.getSubjectDTOS() != null) {
+                List<SubjectDTO> createList = studentDTO.getSubjectDTOS()
+                        .stream()
+                        .filter(subjectDTO -> subjectDTO.getId() == null).toList();
+                List<SubjectDTO> updateList = studentDTO.getSubjectDTOS()
+                        .stream()
+                        .filter(subjectDTO -> subjectDTO.getId() != null
+                                && subjectDTO.getStatus() == null
+                                || subjectDTO.getStatus() != null && subjectDTO.getStatus().equals(Status.ACTIVE)).toList();
+                List<SubjectDTO> deleteList = studentDTO.getSubjectDTOS()
+                        .stream()
+                        .filter(subjectDTO -> subjectDTO.getId() != null
+                                && subjectDTO.getStatus() != null
+                                && subjectDTO.getStatus().equals(Status.INACTIVE)).toList();
+
+                List<SubjectEntity> subjectEntities = subjectRepository.findAllByStudentIdAndStatus(oldDetailStudent.getId(), Status.ACTIVE);
+                int sizeListAfterUpdate = subjectEntities.size() + createList.size() - deleteList.size();
+                if (sizeListAfterUpdate > 5 || sizeListAfterUpdate < 3) {
+                    throw new APIRequestException("Size subject cannot be less than 3 or greater than 5");
+                }
+                HashMap<String, String> subjectsWithIdAndName = new HashMap<>();
+                subjectEntities.forEach(item -> subjectsWithIdAndName.put(item.getId(), item.getName()));
+
+
+                subjectRepository.deleteAll(deleteList.stream().map(item -> {
+                    subjectsWithIdAndName.remove(item.getId());
+                    return dtoToEntity(item);
+                }).collect(Collectors.toSet()));
+
+                subjectRepository.saveAll(createList.stream().map(item -> {
+                    if (subjectsWithIdAndName.containsValue(item.getName())) {
+                        throw new APIRequestException(item.getName() + " is already exists");
+                    }
+                    SubjectEntity subjectEntity = dtoToEntity(item);
+                    subjectEntity.setId(UniqueID.getUUID());
+                    subjectEntity.setStatus(Status.ACTIVE);
+                    subjectsWithIdAndName.put(item.getId(), item.getName());
+                    subjectEntity.setStudentId(studentSaved.getId());
+                    return subjectEntity;
+                }).collect(Collectors.toSet()));
+
+                subjectRepository.saveAll(updateList.stream().map(item -> {
+                    SubjectEntity subjectEntity = subjectRepository.findSubjectById(item.getId());
+                    if (item.getName() != null) {
+                        subjectsWithIdAndName.remove(item.getId());
+                        subjectEntity.setName(item.getName());
+                    }
+                    if (subjectsWithIdAndName.containsValue(item.getName().trim())) {
+                        throw new APIRequestException(item.getName() + " is already exists");
+                    }
+                    if (item.getScore() != null) {
+                        subjectEntity.setScore(item.getScore());
+                    }
+                    if (item.getNumberOfLessons() != null) {
+                        subjectEntity.setNumberOfLessons(item.getNumberOfLessons());
+                    }
+                    subjectsWithIdAndName.put(item.getId(), item.getName());
+                    return subjectEntity;
+                }).collect(Collectors.toSet()));
+            }
         } catch (Exception e) {
+            e.printStackTrace();
             throw new APIRequestException(e.getMessage());
         }
-        List<SubjectEntity> subjectEntities = new ArrayList<>();
-        if (studentDTO.getSubjectDTOS() != null) {
-            HashSet<String> subjectName = new HashSet<>();
-            int i = 0;
-            subjectRepository.deleteAllByStudentEntityId(studentSaved.getId());
-            for (var item : studentDTO.getSubjectDTOS()) {
-                subjectName.add(item.getName());
-                i++;
-                if (subjectName.size() < i) {
-                    throw new APIRequestException("Subject cannot be duplicated");
-                } else {
-                    SubjectEntity subjectEntity = dtoToEntity(item);
-                    if (subjectEntity.getId() == null) {
-                        subjectEntity.setId(UniqueID.getUUID());
-                    }
-                    subjectEntity.setStudentEntity(studentSaved);
-                    subjectEntities.add(subjectEntity);
-                }
-            }
-            studentSaved.setSubjectEntities(new HashSet<>(subjectEntities));
-            try {
-                studentRepository.save(studentSaved);
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw new APIRequestException("Error saving student");
-            }
-        }
+
         return entityToDTO(studentSaved);
     }
+
 
     @Override
     public void deleteStudent(String idStudent) {
         studentRepository.delete(checkStudentIfExists(idStudent));
+        subjectRepository.deleteAllByStudentIdIsIn(Collections.singleton(idStudent));
     }
 
     private StudentEntity checkStudentIfExists(String idStudent) {
@@ -293,17 +334,19 @@ public class StudentServiceImp implements StudentService {
         }
     }
 
-    public List<StudentDTO> getAllStudentWithAverageScore(List<StudentEntity> studentEntityList) {
+    private List<StudentDTO> getAllStudentWithAverageScore(List<StudentEntity> studentEntityList) {
         List<StudentDTO> studentDTOList = new ArrayList<>();
+        List<String> studentIdList = studentEntityList.stream().map(StudentEntity::getId).toList();
+        List<SubjectEntity> subjectEntityList = subjectRepository.findAllByStudentIdIn(studentIdList);
+
         studentEntityList.forEach(studentEntity -> {
             StudentDTO studentDTO = entityToDTO(studentEntity);
-            double averageScore = 0;
-            List<SubjectDTO> subjectDTOList = new ArrayList<>();
-            for (var subjectEntity : studentEntity.getSubjectEntities()) {
-                SubjectDTO subjectDTO = entityToDTO(subjectEntity);
-                averageScore += subjectDTO.getScore();
-                subjectDTOList.add(subjectDTO);
-            }
+            List<SubjectDTO> subjectDTOList = subjectEntityList
+                    .stream()
+                    .filter(item -> item.getStudentId().equals(studentEntity.getId()))
+                    .map(SubjectMapper::entityToDTO)
+                    .toList();
+            double averageScore = subjectDTOList.stream().mapToDouble(SubjectDTO::getScore).sum();
             studentDTO.setAverageScore(averageScore / subjectDTOList.size());
             studentDTO.setSubjectDTOS(subjectDTOList);
             studentDTOList.add(studentDTO);

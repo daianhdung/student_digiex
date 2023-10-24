@@ -25,6 +25,4 @@ public class ClassEntity extends BaseEntity{
     @Column(name = "max_student")
     private int maxStudent;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "classEntity")
-    private Set<StudentEntity> studentEntitySet;
 }

@@ -14,9 +14,9 @@ public class SubjectDTO {
 
     private String name;
 
-    private double score;
+    private Double score;
 
-    private int numberOfLessons;
+    private Integer numberOfLessons;
 
     private Status status;
 
