@@ -12,7 +12,6 @@ import java.util.Set;
 
 @Entity(name = "student")
 @Data
-//@EqualsAndHashCode(exclude = "classEntity")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EntityListeners(AuditingEntityListener.class)
 @SQLDelete(sql = "UPDATE student SET status = 'INACTIVE' WHERE id = ?")

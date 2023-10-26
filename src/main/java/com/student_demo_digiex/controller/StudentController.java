@@ -41,7 +41,7 @@ public class StudentController extends BaseController{
         FilterStudentRequest filterStudentRequest = new FilterStudentRequest(classId, searchTerm, sortField, sortType
                 , filterGender, filterStartDate, filterEndDate, totalItemEachPage
         , currentPage);
-        return responseUtil.buildResponse(RestAPIStatus.OK, studentService.pagingStudent(filterStudentRequest)
+        return responseUtil.buildResponse(RestAPIStatus.OK, studentService.pagingStudentSpecification(filterStudentRequest)
                 , "Get paging student successfully", HttpStatus.OK);
     }
 

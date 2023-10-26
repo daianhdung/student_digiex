@@ -10,7 +10,6 @@ import javax.persistence.*;
 
 @Entity(name = "subject")
 @Data
-//@EqualsAndHashCode(exclude = "studentEntity")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EntityListeners(AuditingEntityListener.class)
 @SQLDelete(sql = "UPDATE subject SET status = 'INACTIVE' WHERE id = ?")

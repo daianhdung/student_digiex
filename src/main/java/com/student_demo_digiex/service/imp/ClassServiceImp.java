@@ -77,7 +77,7 @@ public class ClassServiceImp implements ClassService {
 
     @Override
     public ClassDTO createClass(CreateClassRequest createClass) {
-        ClassEntity nameExisted = classRepository.getClassEntitiesByName(createClass.getName().trim());
+        ClassEntity nameExisted = classRepository.getClassEntitiesByNameAndStatus(createClass.getName().trim(), Status.ACTIVE);
         if (nameExisted != null){
             throw new APIRequestException("Class name already exists");
         }
@@ -98,7 +98,7 @@ public class ClassServiceImp implements ClassService {
         }
 
         if (classDTO.getName() != null && !classDTO.getName().trim().isEmpty()){
-            ClassEntity nameExisted = classRepository.getClassEntitiesByName(classDTO.getName().trim());
+            ClassEntity nameExisted = classRepository.getClassEntitiesByNameAndStatus(classDTO.getName().trim(), Status.ACTIVE);
             if (nameExisted != null && !classEntity.getId().equals(nameExisted.getId())){
                 throw new APIRequestException("Class name already exists");
             }
@@ -128,6 +128,13 @@ public class ClassServiceImp implements ClassService {
         }
 
         Pageable pageable = PageRequest.of(currentPage, totalItem);
+
+        if (!filterClassRequest.getSortField().equals("name") && !filterClassRequest.getSortField().equals("maxStudent")) {
+            throw new APIRequestException("Not support this sort field");
+        }
+        if (!filterClassRequest.getSortType().equals("asc") && !filterClassRequest.getSortType().equals("desc")) {
+            throw new APIRequestException("Not support this sort type");
+        }
 
         if(filterClassRequest.getSortType().equals("asc")){
             pageable = PageRequest.of(currentPage, totalItem, Sort.by(filterClassRequest.getSortField()).ascending());

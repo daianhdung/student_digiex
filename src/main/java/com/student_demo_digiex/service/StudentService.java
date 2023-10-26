@@ -12,9 +12,6 @@ public interface StudentService {
     List<StudentDTO> get3StudentSortByScoreAndDob(String rank);
     List<StudentDTO> getAllStudentByClassIdDefaultSortHighScore(String classId);
     StudentDTO getStudentById(String idStudent);
-
-    PagingStudentResponse pagingStudent(FilterStudentRequest filterStudentRequest);
-
     PagingStudentResponse pagingStudentSpecification(FilterStudentRequest filterStudentRequest);
 
     StudentDTO createStudent(CreateStudentRequest createStudentRequest);

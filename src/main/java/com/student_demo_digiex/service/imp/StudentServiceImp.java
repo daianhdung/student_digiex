@@ -8,6 +8,7 @@ import com.student_demo_digiex.dto.StudentDTO;
 import com.student_demo_digiex.dto.SubjectDTO;
 import com.student_demo_digiex.dto.mapper.StudentMapper;
 import com.student_demo_digiex.dto.mapper.SubjectMapper;
+import com.student_demo_digiex.entity.ClassEntity;
 import com.student_demo_digiex.entity.StudentEntity;
 import com.student_demo_digiex.entity.SubjectEntity;
 import com.student_demo_digiex.model.request.CreateStudentRequest;
@@ -27,7 +28,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -66,7 +69,6 @@ public class StudentServiceImp implements StudentService {
     @Override
     public List<StudentDTO> getAllStudentByClassIdDefaultSortHighScore(String classId) {
         classService.checkClassIfExists(classId);
-
         List<StudentDTO> studentDTOList = getAllStudentWithAverageScore(studentRepository.findAllByClassId(classId));
         return studentDTOList
                 .stream()
@@ -88,93 +90,73 @@ public class StudentServiceImp implements StudentService {
         studentDTO.setAverageScore(averageScore);
         return studentDTO;
     }
-
     @Override
-    public PagingStudentResponse pagingStudent(FilterStudentRequest filterStudentRequest) {
+    public PagingStudentResponse pagingStudentSpecification(FilterStudentRequest filterStudentRequest) {
         int totalItem = filterStudentRequest.getTotalItemEachPage();
         int currentPage = filterStudentRequest.getCurrentPage() - 1;
         if (currentPage < 0) {
             throw new APIRequestException("Page cannot less than 0");
         }
-
-        if (!filterStudentRequest.getSortField().equals("dob") && !filterStudentRequest.getSortField().equals("email") &&
-                !filterStudentRequest.getSortField().equals("lastName") && !filterStudentRequest.getSortField().equals("firstName")
-                && !filterStudentRequest.getSortField().equals("phoneNumber")) {
-            throw new APIRequestException("Not support this sort field");
-        }
-        if (!filterStudentRequest.getSortType().equals("asc") && !filterStudentRequest.getSortType().equals("desc")) {
-            throw new APIRequestException("Not support this sort type");
-        }
-
         Pageable pageable = PageRequest.of(currentPage, totalItem);
-        if (filterStudentRequest.getSortType().equals("desc")) {
-            pageable = PageRequest.of(currentPage, totalItem, Sort.by(filterStudentRequest.getSortField()).descending());
-        } else if (filterStudentRequest.getSortType().equals("asc")) {
-            pageable = PageRequest.of(currentPage, totalItem, Sort.by(filterStudentRequest.getSortField()).ascending());
 
-        }
-
-        Date currentDate = new Date();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd"); // Định dạng của chuỗi đầu ra
-
-        if (filterStudentRequest.getFilterStartDate() == null) {
-            filterStudentRequest.setFilterStartDate("1900-01-01");
-        } else {
-            filterStudentRequest.setFilterStartDate(sdf.format(filterStudentRequest.getFilterStartDate()));
-        }
-
-        if (filterStudentRequest.getFilterEndDate() == null) {
-            //Default endDate now()
-            String dateStr = sdf.format(currentDate);
-            filterStudentRequest.setFilterEndDate(dateStr);
-        } else {
-            filterStudentRequest.setFilterEndDate(sdf.format(filterStudentRequest.getFilterEndDate()));
-        }
-
-        Page<StudentEntity> page;
-//        if (filterStudentRequest.getSearchTerm().trim().isEmpty()) {
-//            page = studentRepository.findStudentsByFilter(
-//                    "%" + filterStudentRequest.getFilterFirstName() + "%",
-//                    "%" + filterStudentRequest.getFilterLastName() + "%",
-//                    "%" + filterStudentRequest.getFilterEmail() + "%",
-//                    "%" + filterStudentRequest.getFilterGender() + "%",
-//                    filterStudentRequest.getFilterStartDate(),
-//                    filterStudentRequest.getFilterEndDate(),
-//                    pageable);
-//        } else {
-        if (filterStudentRequest.getFilterGender() == null) {
-            filterStudentRequest.setFilterGender("ale");
-        }
-        page = studentRepository.findStudentsByFilterHaveKeyword(
-                "%" + filterStudentRequest.getSearchTerm() + "%",
-                "%" + filterStudentRequest.getFilterGender() + "%",
-                filterStudentRequest.getFilterStartDate(),
-                filterStudentRequest.getFilterEndDate(),
-                pageable);
-//        }
-
-        List<StudentDTO> studentDTOS = page.getContent()
-                .stream()
-                .map(StudentMapper::entityToDTO).toList();
-
-        PagingStudentResponse pagingStudentResponse = new PagingStudentResponse();
-        pagingStudentResponse.setStudentDTOList(studentDTOS);
-        pagingStudentResponse.setCurrentPage(filterStudentRequest.getCurrentPage());
-        pagingStudentResponse.setTotalPages(page.getTotalPages());
-        return pagingStudentResponse;
-    }
-
-    @Override
-    public PagingStudentResponse pagingStudentSpecification(FilterStudentRequest filterStudentRequest) {
         Specification<StudentEntity> specification = ((root, cq, cb) -> {
             List<Predicate> predicateList = new ArrayList<>();
+            predicateList.add(cb.equal(root.get("classId"), filterStudentRequest.getClassId()));
+            String searchKey = filterStudentRequest.getSearchTerm();
 
+            if (!searchKey.trim().isEmpty()) {
+                predicateList.add(cb.or(cb.equal(root.get("firstName"), searchKey.trim())
+                        , cb.equal(root.get("lastName"), searchKey.trim())
+                        , cb.equal(root.get("email"), searchKey.trim())
+                        , cb.equal(root.get("phoneNumber"), searchKey.trim())));
+            }
 
+            if(filterStudentRequest.getFilterGender() != null){
+                predicateList.add(cb.like(root.get("gender"), filterStudentRequest.getFilterGender()));
+            }
+
+            SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy"); // Format to Date to query db
+            try{
+                if(filterStudentRequest.getFilterStartDate() != null){
+                    predicateList.add(cb.greaterThanOrEqualTo(root.get("dob"), formatter.parse(filterStudentRequest.getFilterStartDate())));
+                }
+                if(filterStudentRequest.getFilterEndDate() != null){
+                    predicateList.add(cb.lessThanOrEqualTo(root.get("dob"), formatter.parse(filterStudentRequest.getFilterEndDate())));
+                }
+            }catch (Exception e){
+                e.printStackTrace();
+                throw new APIRequestException("Invalid date filter");
+            }
+
+            Path<String> orderClause = switch (filterStudentRequest.getSortField()) {
+                case "last_name" -> root.get("lastName");
+                case "first_name" -> root.get("firstName");
+                case "email" -> root.get("email");
+                case "dob" -> root.get("dob");
+                default -> throw new APIRequestException("sort field not supported");
+            };
+            if (!filterStudentRequest.getSortType().equals("asc") && !filterStudentRequest.getSortType().equals("desc")) {
+                throw new APIRequestException("sort type not supported");
+            }
+            if (filterStudentRequest.getSortType().equals("asc")) {
+                cq.orderBy(cb.asc(orderClause));
+            } else if (filterStudentRequest.getSortType().equals("desc")) {
+                cq.orderBy(cb.desc(orderClause));
+            }
             return cb.and(predicateList.toArray(new Predicate[]{}));
         });
 
 
-        return null;
+        Page<StudentEntity> pageStudentResult = studentRepository.findAll(specification, pageable);
+        System.out.println(pageStudentResult.getContent());
+        PagingStudentResponse pagingStudentResponse = new PagingStudentResponse()   ;
+        pagingStudentResponse.setCurrentPage(filterStudentRequest.getCurrentPage());
+        pagingStudentResponse.setTotalPages(pageStudentResult.getTotalPages());
+        pagingStudentResponse.setStudentDTOList(
+                pageStudentResult.getContent()
+                        .stream()
+                        .map(StudentMapper::entityToDTO).toList());
+        return pagingStudentResponse;
     }
 
 

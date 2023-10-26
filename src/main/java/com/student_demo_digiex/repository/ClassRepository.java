@@ -15,7 +15,7 @@ public interface ClassRepository extends JpaRepository<ClassEntity, String>{
 
     @Query(value = "SELECT count(*) FROM student WHERE class_id = :idClass", nativeQuery = true)
     int countStudentInClass(String idClass);
-    ClassEntity getClassEntitiesByName(String name);
+    ClassEntity getClassEntitiesByNameAndStatus(String name, Status status);
 
     ClassEntity findByIdAndStatus(String id, Status status);
 
